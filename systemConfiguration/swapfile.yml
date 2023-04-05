@@ -1,0 +1,37 @@
+---
+- name: Configure swapfile
+  hosts: os_linux
+  gather_facts: false
+  become: yes
+  tasks:
+
+  - name: Turn off current swap file
+    command: swapoff /swapfile
+    tags:
+      - swap.swapoff
+
+  - name: Remove swap file
+    command: rm /swapfile
+    tags:
+      - swap.rmswap
+
+  - name: Create swap file
+    command: fallocate -l {{size}}G /swapfile
+    tags:
+      - swap.fallocate
+        
+  - name: Change swap file permissions
+    file: path="/swapfile"
+            mode=0600
+    tags:
+      - swap.chmod
+
+  - name: Format swap file
+    command: mkswap /swapfile
+    tags:
+      - swap.mkswap
+
+  - name: Turn on swap
+    command: swapon /swapfile
+    tags:
+      -swap.swapon

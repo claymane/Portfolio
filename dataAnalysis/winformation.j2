@@ -1,0 +1,4 @@
+Host,Drive,Size,Free,Drive,Size,Free,RAM,Free,SWAP,Free
+{% for host in play_hosts %}  
+  {{ hostvars[host]['inventory_hostname'] }},{{ hostvars[host]['drive_information'] | join(',') }}
+{% endfor %}

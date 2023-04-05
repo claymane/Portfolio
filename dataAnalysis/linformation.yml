@@ -1,0 +1,26 @@
+---
+- hosts: os_linux
+  gather_facts: true
+  tasks:
+  - name: Print all available facts
+    ansible.builtin.debug:
+      var: ansible_mounts
+  - name: Extract drive information
+    set_fact:
+      drive_information: "{% set output = [] %}\
+          {{ output.append((ansible_mounts | selectattr('mount','equalto','/') | list | first).size_total/1024|pow(3)) }}\
+          {{ output.append((ansible_mounts | selectattr('mount','equalto','/') | list | first).size_available/1024|pow(3)) }}\
+          {{ output.append(ansible_facts.memtotal_mb/1024) }}\
+          {{ output.append(ansible_facts.memfree_mb/1024) }}\
+          {{ output.append(ansible_facts.swaptotal_mb/1024) }}\
+          {{ output.append(ansible_facts.swapfree_mb/1024) }}\
+          {{ output }}"
+  - debug:
+      var: drive_information
+  - name: create CSV file
+    local_action: template
+    run_once: true
+    args:
+      src: linformation.j2
+      dest: ~/tools/ansible/toolbox/linformation.csv
+

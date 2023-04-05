@@ -1,0 +1,41 @@
+- name: Query customer data from the database
+  community.mysql.mysql_db:
+    login_host: "{{ database }}"
+    login_user: "username"
+    login_password: "password"
+    login_port: "port"
+    name: webinterface_gp_2
+    state: dump
+    target: /tmp/customer_data.sql
+  when: "'database' in group_names"
+
+- name: Extract customer data
+  query:
+    db_uri: "mysql+pymysql://username:@password@{{ database }}:port/database"
+    query: "SELECT * FROM customer_details WHERE country='gb'"
+  register: customer_data
+  when: "'database' in group_names"
+
+- name: Create temporary file for csv
+  ansible.builtin.tempfile:
+  register: csv_temp
+
+- name: Convert data to CSV format
+  copy:
+    content: "{{ customer_data.results[0].rows | join(',') }}"
+    dest: {{ csv_temp }}
+  when: "'database' in group_names"
+
+- name: send email via sendgrid
+  community.general.sendgrid:
+    api_key: "{{ vault_sendgrid_api_key }}"
+    from_address: "email@company.com"
+    to_addresses:
+      - "finance@company.de"
+    bcc:
+      - "username@company.com"
+      - "username.2@company.de"
+    subject: "UK Customer report"
+    body: "Here is a list of UK based customers."
+    attachments:
+      - csv_temp

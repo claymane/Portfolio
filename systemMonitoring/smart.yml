@@ -1,0 +1,29 @@
+---
+- name: Get S.M.A.R.T information for disk health
+  hosts: os_linux
+  gather_facts: true
+  become: true 
+  tasks:
+
+    - name: Install smartmontools package
+      apt:
+        name: smartmontools
+        state: present
+
+    - name: Get S.M.A.R.T information for all disks
+      shell: "smartctl --all {{ item }} | grep 'SMART overall-health'"
+      register: smartctl_output
+      with_items: "{{ ansible_mounts | map(attribute='device') }}"
+      failed_when: smartctl_output.rc != 0 and smartctl_output.rc != 1 and smartctl_output.rc != 4 and smartctl_output.rc != 64
+      ignore_errors: yes
+
+    - name: Output S.M.A.R.T overall health
+      set_fact:
+        final_output: "{% set output = [] %}\
+            {% for result in smartctl_output.results %}\
+              {{ output.append(result.stdout_lines) }}
+            {% endfor %}
+            {{ output }}"
+    
+    - debug:
+        var: final_output
