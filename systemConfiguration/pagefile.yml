@@ -1,0 +1,52 @@
+---
+- name: Check page file and reprovision if necessary
+  hosts: os_windows
+  gather_facts: false
+  tasks:
+
+    - name: Delete page file
+      community.windows.win_pagefile:
+        drive: "{{drive}}"
+        state: absent
+      tags:
+        - delete
+
+    - name: Reprovision page file
+      community.windows.win_pagefile:
+        drive: "{{drive}}"
+        initial_size: "{{size}}"
+        maximum_size: "{{size}}"
+        override: true
+        system_managed: false
+        automatic: false
+        state: present
+      tags:
+        - provision
+
+    - name: Reboot machine
+      win_reboot:
+      tags:
+        - reboot
+
+    - name: Check page file usage
+      ansible.windows.win_powershell: 
+        script: Get-CimInstance -ClassName Win32_PageFileUsage | Select-Object Caption, AllocatedBaseSize, CurrentUsage, PeakUsage
+      register: pagefile_info
+      tags:
+        - status
+    
+    - name: Display output
+      set_fact:
+        pagefile_output: "{% set output = [] %}\
+            {% for drive in pagefile_info.output %}\
+              {{ output.append(drive.Caption + ', ' + 'total: ' + drive.AllocatedBaseSize|string + ', ' + 'peak: ' + drive.PeakUsage|string + ', ' + ' current: ' + drive.CurrentUsage|string) }}\
+            {% endfor %}\
+            {{ output }}"
+      tags:
+        - status
+
+    - debug:
+        var: pagefile_output
+      tags:
+        - status
+
