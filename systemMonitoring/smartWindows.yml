@@ -1,0 +1,21 @@
+- name: Get S.M.A.R.T information for disk health
+  hosts: os_windows
+  gather_facts: true
+  tasks:
+    - name: Install smartmontools package
+      win_chocolatey:
+        name: smartmontools
+        state: present
+
+    - name: Get S.M.A.R.T information for D and C drives
+      ansible.windows.win_shell: |
+        & "C:\Program Files\smartmontools\bin\smartctl.exe" --all D: | findstr "smart overall-health self-assessment"
+        & "C:\Program Files\smartmontools\bin\smartctl.exe" --all C: | findstr "smart overall-health self-assessment"
+      register: smartctl_output
+
+    - name: Output S.M.A.R.T overall health
+      set_fact:
+        final_output: "{{ smartctl_output.stdout_lines }}"
+
+    - debug:
+        var: final_output
