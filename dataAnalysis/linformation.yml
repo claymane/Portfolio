@@ -17,10 +17,11 @@
           {{ output }}"
   - debug:
       var: drive_information
+
   - name: create CSV file
-    local_action: template
-    run_once: true
-    args:
+    delegate_to: localhost
+    become: false
+    template:
       src: linformation.j2
-      dest: ~/tools/ansible/toolbox/linformation.csv
+      dest: ~/ansible/toolbox/linformation.csv
 
