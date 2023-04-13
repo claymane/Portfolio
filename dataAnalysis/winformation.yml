@@ -17,23 +17,27 @@
     set_fact:
       drive_information: "{% set output = [] %}\
           {% for partition in ansible_facts.disks[0].partitions %}\
-            {% if partition is not none %}\
-              {{ output.append(drive_letter) }}\
-              {% for volume in partitions.volumes | flatten %}\
-                {{ output.append((volume.disk_size)) / 1024 }}\
-                {{ output.append((volume.disk_free)) / 1024 }}\
-              {% endfor %}\
+            {% if partition is defined and partition is mapping %}\
+              {% if partition.drive_letter is not none %}\
+                {{ output.append(partition.drive_letter) }}\
+                {% if partition.volumes is defined %}\
+                  {% for volume in partition.volumes | flatten %}\
+                    {{ output.append((volume.size) / 1024) }}\
+                    {{ output.append((volume.size_remaining) / 1024) }}\
+                  {% endfor %}\
+                {% endif %}\
+              {% endif %}\
             {% endif %}\
           {% endfor %}\
-          {{ output.append(ansible_facts.memtotal_mb / 1024 }}\
-          {{ output.append(ansible_facts.memfree_mb / 1024 }}\
-          {{ output.append(ansible_facts.swaptotal_mb / 1024 }}\
-          {{ output.append(ansible_facts.swapfree_mb / 1024 }}\
+          {{ output.append(ansible_facts.memtotal_mb / 1024) }}\
+          {{ output.append(ansible_facts.memfree_mb / 1024) }}\
+          {{ output.append(ansible_facts.pagefiletotal_mb / 1024) }}\
+          {{ output.append(ansible_facts.pagefilefree_mb / 1024) }}\
           {{ output }}"
    
   - name: create CSV file
-    local_action: template
-    run_once: true
-    args:
+    delegate_to: localhost
+    become: false
+    template:
       src: winformation.j2
-      dest: ~/tools/ansible/toolbox/winformation.csv
+      dest: ~/ansible/toolbox/winformation.csv
