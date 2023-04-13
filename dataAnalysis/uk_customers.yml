@@ -1,41 +1,48 @@
 - name: Query customer data from the database
-  community.mysql.mysql_db:
-    login_host: "{{ database }}"
-    login_user: "username"
-    login_password: "password"
-    login_port: "port"
-    name: webinterface_gp_2
-    state: dump
-    target: /tmp/customer_data.sql
-  when: "'database' in group_names"
+  gather_facts: false
+  hosts: localhost
+  vars_files:
+    - ../path
+    - ../path
+  tasks:
 
-- name: Extract customer data
-  query:
-    db_uri: "mysql+pymysql://username:@password@{{ database }}:port/database"
-    query: "SELECT * FROM customer_details WHERE country='gb'"
-  register: customer_data
-  when: "'database' in group_names"
+  - name: Query Database
+    community.mysql.mysql_query:
+      login_host: host 
+      login_user: "user"
+      login_password: "password"
+      login_port: "port"
+      login_db: db
+      query: "query"
+    register: customer_data
 
-- name: Create temporary file for csv
-  ansible.builtin.tempfile:
-  register: csv_temp
+  - name: Extract customer data from query
+    set_fact:
+      customer_information: "{% set output = [] %}\
+          {% for row in customer_data.query_result %}\
+            {% for customer in row %}\
+              {{ output.append(customer.value1) }}\
+              {{ output.append(customer.value2) }}\
+            {% endfor %}\
+          {% endfor %}\
+          {{ output }}"
 
-- name: Convert data to CSV format
-  copy:
-    content: "{{ customer_data.results[0].rows | join(',') }}"
-    dest: {{ csv_temp }}
-  when: "'database' in group_names"
+  - name: Write customer data to CSV file
+    copy:
+      content: "{{ customer_information }}"
+      dest: "~/dest/path"
 
-- name: send email via sendgrid
-  community.general.sendgrid:
-    api_key: "{{ vault_sendgrid_api_key }}"
-    from_address: "email@company.com"
-    to_addresses:
-      - "finance@company.de"
-    bcc:
-      - "username@company.com"
-      - "username.2@company.de"
-    subject: "UK Customer report"
-    body: "Here is a list of UK based customers."
-    attachments:
-      - csv_temp
+  - name: send email via sendgrid
+    community.general.sendgrid:
+      api_key: "---"
+      from_address: "---"
+      to_addresses:
+        - "---"
+      bcc:
+        - "---"
+        - "---"
+      subject: "UK Customer report"
+      body: "Here is a list of UK based customers."
+      attachments:
+        - "~/dest/path"
+
