@@ -8,30 +8,53 @@
   - name: Turn off current swap file
     command: swapoff /swapfile
     tags:
-      - swap.swapoff
+      - delete
 
   - name: Remove swap file
     command: rm /swapfile
     tags:
-      - swap.rmswap
+      - delete
 
   - name: Create swap file
     command: fallocate -l {{size}}G /swapfile
     tags:
-      - swap.fallocate
-        
+      - provision
+
   - name: Change swap file permissions
     file: path="/swapfile"
             mode=0600
     tags:
-      - swap.chmod
+      - provision
 
   - name: Format swap file
     command: mkswap /swapfile
     tags:
-      - swap.mkswap
+      - provision
 
   - name: Turn on swap
     command: swapon /swapfile
     tags:
-      -swap.swapon
+      - provision
+
+  - name: Display memory
+    command: free -m
+    register: memory_allocation
+    tags:
+      - status
+
+  - debug:
+      var: memory_allocation.stdout_lines
+    tags:
+      - status
+
+  - name: Display disk
+    command: df -h
+    register: space_allocation
+    tags:
+      - status
+
+  - debug:
+      var: space_allocation.stdout_lines
+    tags:
+      - status
+               
