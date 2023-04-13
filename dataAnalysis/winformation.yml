@@ -1,0 +1,43 @@
+---
+- hosts: os_windows
+  gather_facts: true
+  tasks:
+  - name: Print all avaliable facts
+    ansible.builtin.debug:
+      var: ansible_facts
+
+  - name: Disk information
+    community.windows.win_disk_facts:
+
+  - name: Output disk information
+    debug:
+      var: ansible_facts.disks[0]
+
+  - name: Extract Drive information
+    set_fact:
+      drive_information: "{% set output = [] %}\
+          {% for partition in ansible_facts.disks[0].partitions %}\
+            {% if partition is defined and partition is mapping %}\
+              {% if partition.drive_letter is not none %}\
+                {{ output.append(partition.drive_letter) }}\
+                {% if partition.volumes is defined %}\
+                  {% for volume in partition.volumes | flatten %}\
+                    {{ output.append((volume.size) / 1024) }}\
+                    {{ output.append((volume.size_remaining) / 1024) }}\
+                  {% endfor %}\
+                {% endif %}\
+              {% endif %}\
+            {% endif %}\
+          {% endfor %}\
+          {{ output.append(ansible_facts.memtotal_mb / 1024) }}\
+          {{ output.append(ansible_facts.memfree_mb / 1024) }}\
+          {{ output.append(ansible_facts.pagefiletotal_mb / 1024) }}\
+          {{ output.append(ansible_facts.pagefilefree_mb / 1024) }}\
+          {{ output }}"
+
+  - name: create CSV file
+    delegate_to: localhost
+    become: false
+    template:
+      src: winformation.j2
+      dest: ~/ansible/toolbox/winformation.csv
