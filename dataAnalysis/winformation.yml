@@ -8,10 +8,15 @@
 
   - name: Disk information
     community.windows.win_disk_facts:
-
+  
   - name: Output disk information
     debug:
       var: ansible_facts.disks[0]
+
+  - name: Check page file peak usage
+    ansible.windows.win_powershell:
+      script: Get-CimInstance -ClassName win32_PageFileUsage | Measure-Object -Property PeakUsage -Sum
+    register: peakUsage
 
   - name: Extract Drive information
     set_fact:
@@ -22,19 +27,21 @@
                 {{ output.append(partition.drive_letter) }}\
                 {% if partition.volumes is defined %}\
                   {% for volume in partition.volumes | flatten %}\
-                    {{ output.append((volume.size) / 1024) }}\
-                    {{ output.append((volume.size_remaining) / 1024) }}\
+                    {{ output.append(volume.size) }}\
+                    {{ output.append(volume.size_remaining) }}\
+                    {{ output.append(volume.health_status) }}\
                   {% endfor %}\
                 {% endif %}\
               {% endif %}\
             {% endif %}\
           {% endfor %}\
-          {{ output.append(ansible_facts.memtotal_mb / 1024) }}\
-          {{ output.append(ansible_facts.memfree_mb / 1024) }}\
-          {{ output.append(ansible_facts.pagefiletotal_mb / 1024) }}\
-          {{ output.append(ansible_facts.pagefilefree_mb / 1024) }}\
+          {{ output.append(ansible_facts.memtotal_mb) }}\
+          {{ output.append(ansible_facts.memfree_mb) }}\
+          {{ output.append(ansible_facts.pagefiletotal_mb) }}\
+          {{ output.append(ansible_facts.pagefilefree_mb) }}\
+          {{ output.append(peakUsage.output[0].Sum) }}\
           {{ output }}"
-
+   
   - name: create CSV file
     delegate_to: localhost
     become: false
