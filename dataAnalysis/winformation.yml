@@ -44,7 +44,17 @@
    
   - name: create CSV file
     delegate_to: localhost
-    become: false
     template:
       src: winformation.j2
       dest: ~/ansible/toolbox/winformation.csv
+
+  - name: launch python script
+    delegate_to: localhost
+    run_once: true
+    ansible.builtin.script: /home/clay/ansible/toolbox/winformation.py /home/clay/ansible/toolbox/winformation.csv
+    register: script_output
+
+  - name: output script
+    ansible.builtin.debug:
+      var: script_output.stdout_lines
+
