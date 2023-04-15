@@ -57,4 +57,3 @@
   - name: output script
     ansible.builtin.debug:
       var: script_output.stdout_lines
-
