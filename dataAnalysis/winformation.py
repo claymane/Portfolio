@@ -3,6 +3,17 @@
 import csv
 import sys
 
+total_drive1_size = 0
+total_drive1_free = 0
+total_drive2_size = 0
+total_drive2_free = 0
+total_ram = 0
+total_ram_free = 0
+total_swap = 0
+total_swap_free = 0
+total_swap_peak = 0
+host_count = 0
+
 file = sys.argv[1]
 logfile = 'winformation.log'
 
@@ -25,6 +36,7 @@ with open(file, mode='r') as csvfile:
     for row in csvreader:
         # Check if all fields are present
         if all(field in row and row[field] is not None for field in ['Host', 'DRIVE1', 'DRIVE1_size', 'DRIVE1_free', 'DRIVE1_health1', 'DRIVE2', 'DRIVE2_size', 'DRIVE2_free', 'DRIVE2_health', 'RAM', 'RAM_Free', 'SWAP', 'SWAP_Free', 'SWAP_Peak']):
+
             host = row['Host']
             drive1 = row['DRIVE1']
             drive1_size = round(float(row['DRIVE1_size']) / (1024**3), 2)
@@ -39,6 +51,17 @@ with open(file, mode='r') as csvfile:
             swap = round(float(row['SWAP']) / 1024, 2)
             swap_free = round(float(row['SWAP_Free']) / 1024, 2)
             swap_peak = round(float(row['SWAP_Peak']) / 1024, 2)
+
+            total_drive1_size += drive1_size
+            total_drive1_free += drive1_free
+            total_drive2_size += drive2_size
+            total_drive2_free += drive2_free
+            total_ram += ram
+            total_ram_free += ram_free
+            total_swap += swap
+            total_swap_free += swap_free
+            total_swap_peak += swap_peak
+            host_count += 1
 
             host_info = {
                 'Host': host,
@@ -76,3 +99,19 @@ with open(file, mode='r') as csvfile:
 
             log_host_info(host_info)
             print(host_info)
+
+average_drive1_size = total_drive1_size / host_count
+average_drive1_free = total_drive1_free / host_count
+average_drive2_size = total_drive2_size / host_count
+average_drive2_free = total_drive2_free / host_count
+average_ram = total_ram / host_count
+average_ram_free = total_ram_free / host_count
+average_swap = total_swap / host_count
+average_swap_free = total_swap_free / host_count
+average_swap_peak = total_swap_peak / host_count
+
+
+print(f"Average drive 1 size: {average_drive1_size:.2f} GB, Average drive 1 free: {average_drive1_free:.2f} GB")
+print(f"Average drive 2 size: {average_drive2_size:.2f} GB, Average drive 2 free: {average_drive2_free:.2f} GB")
+print(f"Average RAM: {average_ram:.2f} GB, Average RAM free: {average_ram_free:.2f} GB")
+print(f"Average swap: {average_swap:.2f} GB, Average swap free: {average_swap_free:.2f} GB, Average swap peak: {average_swap_peak:.2f} GB")

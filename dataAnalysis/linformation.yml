@@ -2,9 +2,15 @@
 - hosts: os_linux
   gather_facts: true
   tasks:
+  
+  - name: Print all avaliable facts
+    ansible.builtin.debug:
+      var: ansible_facts 
+    
   - name: Print all available facts
     ansible.builtin.debug:
       var: ansible_mounts
+  
   - name: Extract drive information
     set_fact:
       drive_information: "{% set output = [] %}\
@@ -25,3 +31,12 @@
       src: linformation.j2
       dest: ~/ansible/toolbox/linformation.csv
 
+  - name: launch python script
+    delegate_to: localhost
+    run_once: true
+    ansible.builtin.script: /home/clay/ansible/toolbox/linformation.py /home/clay/ansible/toolbox/linformation.csv
+    register: script_output
+
+  - name: output script
+    ansible.builtin.debug:
+      var: script_output.stdout_lines
